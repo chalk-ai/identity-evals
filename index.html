@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Identity Evals</title>
+<style>
+  :root { --bg:#224A41; --panel:#1C3B34; --panel2:#29524A; --line:#32645B; --ink:#EFF5F3; --muted:#B9CFC7;
+          --accent:#BBD96D; --mint:#70CD96; --deny:#F8947F; --warn:#F3F662; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .mono { font-family:ui-monospace,"SFMono-Regular",Menlo,monospace; }
+  .label { font:11px/16px ui-monospace,Menlo,monospace; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  header { padding:20px 24px 0; }
+  header h1 { margin:0; font-size:20px; font-weight:500; }
+  header p { margin:4px 0 0; color:var(--muted); font-size:14px; }
+  html.embed header { display:none; }
+  .wrap { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:20px; padding:20px 24px 24px; }
+  @media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:16px; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:14px; }
+  .personas { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+  .persona { text-align:left; background:var(--panel2); border:1px solid var(--line); border-radius:4px; padding:10px; color:var(--ink); cursor:pointer; font:inherit; }
+  .persona b { display:block; font-weight:500; font-size:14px; }
+  .persona span { color:var(--muted); font-size:12px; }
+  .persona.on { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+  .policy { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .pill { border:1px solid var(--line); background:transparent; color:var(--muted); border-radius:20px; padding:6px 12px; cursor:pointer;
+          font:12px/14px ui-monospace,Menlo,monospace; }
+  .pill.on { color:var(--bg); background:var(--accent); border-color:var(--accent); }
+  .pill.on.bug { background:var(--deny); border-color:var(--deny); }
+  .note { color:var(--muted); font-size:12px; margin-top:6px; min-height:18px; }
+  .tasks { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .task { display:flex; justify-content:space-between; align-items:center; gap:8px; text-align:left; background:transparent; border:1px solid var(--line);
+          border-radius:4px; padding:8px 10px; color:var(--ink); cursor:pointer; font:inherit; font-size:13px; }
+  .task:hover { border-color:var(--muted); }
+  .exp { font:10px/14px ui-monospace,Menlo,monospace; text-transform:uppercase; padding:2px 6px; border-radius:3px; white-space:nowrap; }
+  .exp.allow { color:var(--bg); background:var(--mint); }
+  .exp.deny { color:var(--bg); background:var(--deny); }
+  .exp.na { color:var(--muted); border:1px solid var(--line); }
+  textarea { width:100%; margin-top:8px; background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:4px; padding:10px; font:inherit; resize:vertical; min-height:64px; }
+  .run { margin-top:8px; width:100%; border:1px solid var(--accent); background:var(--accent); color:var(--bg); border-radius:20px; padding:11px;
+         font:13px/15px ui-monospace,Menlo,monospace; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; }
+  .run:disabled { opacity:.5; cursor:default; }
+  .claims { margin:8px 0 0; padding:10px; background:var(--panel2); border-radius:4px; font-size:12px; white-space:pre-wrap; color:var(--muted); }
+  .events { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+  .ev { border:1px solid var(--line); border-radius:4px; padding:10px 12px; background:var(--panel); }
+  .ev.tool.deny { border-left:3px solid var(--deny); }
+  .ev.tool.allow { border-left:3px solid var(--mint); }
+  .ev .head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .badge { font:11px/14px ui-monospace,Menlo,monospace; text-transform:uppercase; padding:2px 7px; border-radius:3px; color:var(--bg); }
+  .badge.allow { background:var(--mint); } .badge.deny { background:var(--deny); }
+  .ev pre { margin:6px 0 0; white-space:pre-wrap; word-break:break-word; font-size:12px; color:var(--muted); max-height:140px; overflow:auto; }
+  .answer { white-space:pre-wrap; }
+  .verdict { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .score { border:1px solid var(--line); border-radius:4px; padding:10px; }
+  .score .v { font:20px/24px ui-monospace,Menlo,monospace; }
+  .score.pass .v { color:var(--mint); } .score.fail .v { color:var(--deny); } .score.part .v { color:var(--warn); }
+  .empty { color:var(--muted); padding:28px 8px; text-align:center; }
+  .err { color:var(--deny); margin-top:8px; font-size:13px; }
+  .spin { display:inline-block; width:10px; height:10px; border:2px solid var(--muted); border-top-color:transparent; border-radius:50%; animation:s 0.8s linear infinite; vertical-align:-1px; }
+  @keyframes s { to { transform:rotate(360deg); } }
+</style>
+<script>
+  if (new URLSearchParams(location.search).has("embed")) document.documentElement.classList.add("embed");
+</script>
+</head>
+<body>
+<header>
+  <h1>Corvid Mutual operations agent</h1>
+  <p>Pick who the agent is acting as, then ask for something. Every tool call is authorized against that identity's token.</p>
+</header>
+<div class="wrap">
+  <div>
+    <div class="card">
+      <div class="label">Acting as</div>
+      <div class="personas" id="personas"></div>
+      <div class="label" style="margin-top:14px">Policy bundle</div>
+      <div class="policy" id="policies"></div>
+      <div class="note" id="policy-note"></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="label">Try a task from the evaluation</div>
+      <div class="tasks" id="tasks"></div>
+      <div class="label" style="margin-top:14px">Or ask anything</div>
+      <textarea id="req" maxlength="400" placeholder="e.g. Show me the claims for member M-1003."></textarea>
+      <button class="run" id="run">Run as this identity</button>
+      <div class="err" id="err"></div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <div class="label">Signed token the tools see (the model never does)</div>
+      <div class="claims mono" id="claims">Pick a persona.</div>
+    </div>
+    <div id="out"><div class="empty">The agent's tool calls and each authorization decision will appear here.</div></div>
+  </div>
+</div>
+<script>
+let data = null, persona = "analyst", policy = null;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function render() {
+  $("personas").innerHTML = data.personas.map((p) =>
+    `<button class="persona ${p.id === persona ? "on" : ""}" data-p="${p.id}"><b>${esc(p.name)}</b><span>${esc(p.title)}</span></button>`).join("");
+  $("policies").innerHTML = data.policies.map((b) =>
+    `<button class="pill ${b.version === policy ? "on" : ""} ${b.version === "2026.10.1" ? "bug" : ""}" data-v="${b.version}">${b.version}${b.version === "2026.10.1" ? " · misconfigured" : ""}</button>`).join("");
+  $("policy-note").textContent = data.policies.find((b) => b.version === policy).note;
+  $("tasks").innerHTML = data.tasks.map((t) => {
+    const e = t.expected[persona];
+    return `<button class="task" data-t="${t.task}"><span>${esc(t.label)}</span><span class="exp ${e || "na"}">${e ? "expect " + e : "not in matrix"}</span></button>`;
+  }).join("");
+  const p = data.personas.find((x) => x.id === persona);
+  $("claims").textContent = JSON.stringify({ sub: p.id, role: p.role, member_id: p.member_id, refund_limit_usd: p.refund_limit_usd, policy }, null, 2);
+  document.querySelectorAll(".persona").forEach((b) => b.onclick = () => { persona = b.dataset.p; render(); });
+  document.querySelectorAll(".pill").forEach((b) => b.onclick = () => { policy = b.dataset.v; render(); });
+  document.querySelectorAll(".task").forEach((b) => b.onclick = () => {
+    $("req").value = data.tasks.find((t) => t.task === b.dataset.t).request; go();
+  });
+}
+
+function score(label, s) {
+  const cls = s.score === 1 ? "pass" : s.score === 0 ? "fail" : "part";
+  return `<div class="score ${cls}"><div class="label">${label}</div><div class="v">${s.score === 1 ? "PASS" : s.score === 0 ? "FAIL" : "UNPROVEN"}</div><div style="font-size:12px;color:var(--muted)">${esc(s.verdict || "")}${s.leaked ? ": " + esc(s.leaked.join(", ")) : ""}</div></div>`;
+}
+
+function show(trace) {
+  const evs = trace.events.map((e) => {
+    if (e.type === "text") return `<div class="ev"><div class="label">Agent</div><div class="answer">${esc(e.text)}</div></div>`;
+    const k = e.allowed ? "allow" : "deny";
+    return `<div class="ev tool ${k}"><div class="head"><span class="badge ${k}">${e.allowed ? "allowed" : "denied"}</span>
+      <span class="mono">${esc(e.tool)}(${esc(JSON.stringify(e.input))})</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">rule <span class="mono">${esc(e.rule)}</span>${e.allowed ? "" : " · " + esc(e.reason)}</div>
+      <pre class="mono">${esc(JSON.stringify(e.result, null, 1)).slice(0, 1200)}</pre></div>`;
+  }).join("");
+  const v = trace.verdict ? `<div class="verdict">${score("Authorization enforced", trace.verdict.authorization)}${score("No restricted data", trace.verdict.no_leak)}</div>` : "";
+  $("out").innerHTML = `${v}<div class="events">${evs || '<div class="empty">The agent made no tool calls.</div>'}</div>
+    <div class="note">${trace.events.filter((e) => e.type === "tool").length} tool calls · ${trace.seconds}s · policy ${esc(trace.policy)}</div>`;
+}
+
+async function go() {
+  const request = $("req").value.trim();
+  if (!request) return;
+  $("run").disabled = true; $("err").textContent = "";
+  $("out").innerHTML = `<div class="empty"><span class="spin"></span> Running as ${esc(data.personas.find((p) => p.id === persona).name)}…</div>`;
+  try {
+    const r = await fetch("api/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ persona, request, policy }) });
+    const body = await r.json();
+    if (!r.ok) throw new Error(body.detail || r.statusText);
+    show(body);
+  } catch (e) {
+    $("out").innerHTML = ""; $("err").textContent = e.message;
+  } finally { $("run").disabled = false; }
+}
+
+$("run").onclick = go;
+fetch("api/personas").then((r) => r.json()).then((d) => { data = d; policy = d.default_policy; render(); });
+
+// Embedded in another page: report our height so the parent can size the iframe to fit.
+if (document.documentElement.classList.contains("embed") && window.parent !== window) {
+  const report = () => window.parent.postMessage(
+    { type: "chalk-demo-height", height: Math.ceil(document.body.getBoundingClientRect().height) }, "*");
+  new ResizeObserver(report).observe(document.body);
+  report();
+}
+</script>
+</body>
+</html>
