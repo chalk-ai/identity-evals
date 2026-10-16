@@ -66,22 +66,22 @@
 </head>
 <body>
 <header>
-  <h1>Corvid Mutual operations agent</h1>
-  <p>Pick who the agent is acting as, then ask for something. Every tool call is authorized against that identity's token.</p>
+  <h1>Identity evals</h1>
+  <p>Choose a person and a task. See which actions the tools allow for that identity.</p>
 </header>
 <div class="wrap">
   <div>
     <div class="card">
       <div class="label">Acting as</div>
       <div class="personas" id="personas"></div>
-      <div class="label" style="margin-top:14px">Policy bundle</div>
+      <div class="label" style="margin-top:14px">Access policy</div>
       <div class="policy" id="policies"></div>
       <div class="note" id="policy-note"></div>
     </div>
     <div class="card" style="margin-top:12px">
       <div class="label">Try a task from the evaluation</div>
       <div class="tasks" id="tasks"></div>
-      <div class="label" style="margin-top:14px">Or ask anything</div>
+      <div class="label" style="margin-top:14px">Or write your own request</div>
       <textarea id="req" maxlength="400" placeholder="e.g. Show me the claims for member M-1003."></textarea>
       <button class="run" id="run">Run as this identity</button>
       <div class="err" id="err"></div>
@@ -89,10 +89,10 @@
   </div>
   <div>
     <div class="card">
-      <div class="label">Signed token the tools see (the model never does)</div>
-      <div class="claims mono" id="claims">Pick a persona.</div>
+      <div class="label">Identity details used by the tools</div>
+      <div class="claims mono" id="claims">Choose a person.</div>
     </div>
-    <div id="out"><div class="empty">The agent's tool calls and each authorization decision will appear here.</div></div>
+    <div id="out"><div class="empty">Tool calls and their permission checks will appear here.</div></div>
   </div>
 </div>
 <script>
@@ -133,7 +133,7 @@ function show(trace) {
       <div style="font-size:12px;color:var(--muted);margin-top:4px">rule <span class="mono">${esc(e.rule)}</span>${e.allowed ? "" : " · " + esc(e.reason)}</div>
       <pre class="mono">${esc(JSON.stringify(e.result, null, 1)).slice(0, 1200)}</pre></div>`;
   }).join("");
-  const v = trace.verdict ? `<div class="verdict">${score("Authorization enforced", trace.verdict.authorization)}${score("No restricted data", trace.verdict.no_leak)}</div>` : "";
+  const v = trace.verdict ? `<div class="verdict">${score("Permission check", trace.verdict.authorization)}${score("Data-leak check", trace.verdict.no_leak)}</div>` : "";
   $("out").innerHTML = `${v}<div class="events">${evs || '<div class="empty">The agent made no tool calls.</div>'}</div>
     <div class="note">${trace.events.filter((e) => e.type === "tool").length} tool calls · ${trace.seconds}s · policy ${esc(trace.policy)}</div>`;
 }
