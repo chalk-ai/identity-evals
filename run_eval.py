@@ -6,7 +6,7 @@
 # ///
 """Run the negative-authorization evaluation: every persona against every task, per policy bundle.
 
-    [IDENTITY_EVALS_ENV_ID=<environment>] ./run_eval.py [--policy 2026.10.1 --policy 2026.10.2]
+    ./run_eval.py [--policy 2026.10.1 --policy 2026.10.2]
 
 The task function runs the agent as the row's persona. The scorers never ask the model what
 happened: they read the tool layer's recorded decisions, and check that values from records
@@ -17,8 +17,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -31,21 +29,7 @@ sys.path.insert(0, str(HERE))
 MODULES = ["corvid.py", "agent.py", "cases.py", "scoring.py"]
 
 
-def load_chalk_env(env_id: str | None) -> None:
-    if "CHALK_CLIENT_ID" not in os.environ:
-        cfg = json.loads(subprocess.check_output(["chalk", "config", "--json"]))
-        os.environ["CHALK_API_SERVER"] = cfg["apiServer"]["value"]
-        os.environ["CHALK_CLIENT_ID"] = cfg["clientId"]["value"]
-        os.environ["CHALK_CLIENT_SECRET"] = cfg["clientSecret"]["value"]
-        os.environ.setdefault("CHALK_ENVIRONMENT_ID", cfg["environment"]["value"])
-    if env_id:
-        os.environ["CHALK_ENVIRONMENT_ID"] = env_id
-
-
-# The decorators below deploy when this module is imported, so credentials must be in place
-# first. Inside the function's container this module is imported again, not run, and skips it.
-if __name__ == "__main__":
-    load_chalk_env(os.environ.get("IDENTITY_EVALS_ENV_ID"))
+# Deployment uses ambient login; function pods use platform-provided routing.
 
 IMAGE = Image.debian_slim("3.12").pip_install(["anthropic==1.13.0", "chalkcompute==2.13.5"])
 # This module is imported again inside each function's container, where the image is never
@@ -189,7 +173,6 @@ def main() -> int:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--policy", action="append", default=None)
-    parser.add_argument("--timeout", type=float, default=3600.0)
     # Re-read recorded runs instead of starting new ones: policy:evaluation_id:run_id.
     parser.add_argument("--summarize", action="append", default=None)
     args = parser.parse_args()
@@ -232,7 +215,7 @@ def main() -> int:
     results_dir.mkdir(exist_ok=True)
     exit_code = 0
     for policy, evaluation_id, run_id in runs:
-        run = _wait(run_id, args.timeout)
+        run = _wait(run_id, 3600.0)
         print(f"policy {policy}: {run.status}", flush=True)
         if run.result_dataset is None:
             exit_code = 1
