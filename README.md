@@ -46,7 +46,7 @@ switches to an allowlist, and the same evaluation passes.
 
 You need [`uv`](https://docs.astral.sh/uv/), a Chalk environment with the model router enabled,
 and a router API key stored as the Chalk secret `CHALK_ROUTER_API_KEY`
-(`chalk router api-key create`). Credentials come from the SDK’s ambient credentials from `chalk login`.
+(`chalk router api-key create`). Credentials come from your existing `chalk login`.
 
 ```bash
 ./run_eval.py # both policy bundles; results land in results/<policy>.json

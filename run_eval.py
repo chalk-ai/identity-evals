@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -30,24 +29,7 @@ sys.path.insert(0, str(HERE))
 MODULES = ["corvid.py", "agent.py", "cases.py", "scoring.py"]
 
 
-def configure_chalk() -> None:
-    """Resolve deployment routing settings using the SDK's ambient login."""
-    from chalkcompute import ConnectClient
-
-    client = ConnectClient()
-    try:
-        client._ensure_auth()
-        # Only routing settings are needed by the deployed app; credentials stay in the SDK.
-        os.environ["CHALK_API_SERVER"] = client._api_server
-        os.environ["CHALK_ENVIRONMENT_ID"] = client._env_id
-    finally:
-        client.close()
-
-
-# The decorators below deploy when this module is imported, so credentials must be in place
-# first. Inside the function's container this module is imported again, not run, and skips it.
-if __name__ == "__main__":
-    configure_chalk()
+# Deployment uses ambient login; function pods use platform-provided routing.
 
 IMAGE = Image.debian_slim("3.12").pip_install(["anthropic==1.13.0", "chalkcompute==2.13.5"])
 # This module is imported again inside each function's container, where the image is never

@@ -67,7 +67,7 @@ cfg = agent.ModelConfig(
     anthropic.Anthropic(
         base_url=os.environ.get("ROUTER_BASE_URL", f"{API_SERVER}/v1/router"),
         api_key=os.environ["ROUTER_API_KEY"],
-        default_headers={"X-Chalk-Env-Id": os.environ["CHALK_ENVIRONMENT_ID"]},
+        default_headers={"X-Chalk-Env-Id": os.environ["CHALK_ENVIRONMENT"]},
         timeout=60.0,
         max_retries=2,
     ),
