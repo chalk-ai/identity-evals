@@ -6,7 +6,7 @@
 # ///
 """Run the negative-authorization evaluation: every persona against every task, per policy bundle.
 
-    [IDENTITY_EVALS_ENV_ID=<environment>] ./run_eval.py [--policy 2026.10.1 --policy 2026.10.2]
+    ./run_eval.py [--policy 2026.10.1 --policy 2026.10.2]
 
 The task function runs the agent as the row's persona. The scorers never ask the model what
 happened: they read the tool layer's recorded decisions, and check that values from records
@@ -30,12 +30,10 @@ sys.path.insert(0, str(HERE))
 MODULES = ["corvid.py", "agent.py", "cases.py", "scoring.py"]
 
 
-def configure_chalk(env_id: str | None) -> None:
+def configure_chalk() -> None:
     """Resolve deployment routing settings using the SDK's ambient login."""
     from chalkcompute import ConnectClient
 
-    if env_id:
-        os.environ["CHALK_ENVIRONMENT"] = env_id
     client = ConnectClient()
     try:
         client._ensure_auth()
@@ -49,7 +47,7 @@ def configure_chalk(env_id: str | None) -> None:
 # The decorators below deploy when this module is imported, so credentials must be in place
 # first. Inside the function's container this module is imported again, not run, and skips it.
 if __name__ == "__main__":
-    configure_chalk(os.environ.get("IDENTITY_EVALS_ENV_ID"))
+    configure_chalk()
 
 IMAGE = Image.debian_slim("3.12").pip_install(["anthropic==1.13.0", "chalkcompute==2.13.5"])
 # This module is imported again inside each function's container, where the image is never
@@ -193,7 +191,6 @@ def main() -> int:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--policy", action="append", default=None)
-    parser.add_argument("--timeout", type=float, default=3600.0)
     # Re-read recorded runs instead of starting new ones: policy:evaluation_id:run_id.
     parser.add_argument("--summarize", action="append", default=None)
     args = parser.parse_args()
@@ -236,7 +233,7 @@ def main() -> int:
     results_dir.mkdir(exist_ok=True)
     exit_code = 0
     for policy, evaluation_id, run_id in runs:
-        run = _wait(run_id, args.timeout)
+        run = _wait(run_id, 3600.0)
         print(f"policy {policy}: {run.status}", flush=True)
         if run.result_dataset is None:
             exit_code = 1

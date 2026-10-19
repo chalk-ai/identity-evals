@@ -49,8 +49,8 @@ and a router API key stored as the Chalk secret `CHALK_ROUTER_API_KEY`
 (`chalk router api-key create`). Credentials come from the SDK’s ambient credentials from `chalk login`.
 
 ```bash
-./run_eval.py            # both policy bundles; results land in results/<policy>.json
-./deploy.py              # the interactive page: pick a persona, ask, watch each authorization
+./run_eval.py # both policy bundles; results land in results/<policy>.json
+./deploy.py # the interactive page: pick a persona, ask, watch each authorization
 ```
 
 The page is public once deployed. It limits each visitor to 20 runs an hour, caps requests at 400
@@ -66,5 +66,5 @@ Apache-2.0.
 
 The SDK reads credentials, API host, and the selected environment from your existing
 `chalk login` in `~/.chalk.yml`, including project-scoped and default logins.
-For unattended runs, `CHALK_CLIENT_ID` and `CHALK_CLIENT_SECRET` remain supported. Where available, `--env-id`
-overrides the target environment; otherwise the SDK uses your login or environment settings.
+For unattended runs, `CHALK_CLIENT_ID` and `CHALK_CLIENT_SECRET` remain supported.
+The examples use the current environment selected by your Chalk login.
